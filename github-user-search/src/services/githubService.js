@@ -11,4 +11,14 @@ export const fetchUserData = async (username) => {
   return api.get(`/users/${username}`);
 };
 
+export const searchUsers = async (query, page = 1, perPage = 30) => {
+  return api.get('/search/users', {
+    params: {
+      q: query,
+      page,
+      per_page: perPage
+    }
+  });
+};
+
 export default api;
