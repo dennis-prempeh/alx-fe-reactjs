@@ -1,19 +1,31 @@
-import React from 'react';
-import Search from './components/Search';
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import "./App.css";
+import SearchPage from "./components/SearchPage";
+import UserDetails from "./components/UserDetails";
 
 function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      <header className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white py-10">
-        <div className="container mx-auto px-6 text-center">
-          <h1 className="text-5xl font-bold">GitHub User Search</h1>
-          <p className="mt-2 text-xl opacity-90">Advanced search by location & repos</p>
-        </div>
+    <Router>
+      <header style={{ padding: 12, borderBottom: "1px solid #eee" }}>
+        <Link to="/" style={{ textDecoration: "none", color: "#111" }}>
+          <strong>GitHub User Search</strong>
+        </Link>
       </header>
-      <main className="container mx-auto px-6 py-12">
-        <Search />
-      </main>
-    </div>
+      <Routes>
+        <Route path="/" element={<SearchPage />} />
+        <Route path="/user/:username" element={<UserDetails />} />
+      </Routes>
+      <footer
+        style={{
+          padding: 12,
+          borderTop: "1px solid #eee",
+          marginTop: 24,
+          textAlign: "center",
+        }}
+      >
+        Built with Vite + React
+      </footer>
+    </Router>
   );
 }
 

@@ -1,116 +1,79 @@
-import { useState } from 'react';
-import { searchUsers, fetchUserData } from '../services/githubService'; // ← This line is REQUIRED for checker
+import { useState } from "react";
+import { fetchUserData } from "../services/githubService";
 
-function Search() {
-  const [query, setQuery] = useState('');
-  const [location, setLocation] = useState('');
-  const [minRepos, setMinRepos] = useState('');
+const Search = () => {
+  const [query, setQuery] = useState("");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [page, setPage] = useState(1);
+  const [error, setError] = useState(null);
 
-  const buildQuery = () => {
-    let q = query.trim() || 'a';
-    if (location) q += `+location:${location.trim()}`;
-    if (minRepos) q += `+repos:>=${minRepos}`;
-    return q;
-  };
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    const name = (e.target.elements.username.value || "").trim();
+    if (!name) return;
 
-  const handleSearch = async (newPage = 1) => {
     setLoading(true);
-    setError('');
+    setError(null);
+    setUsers([]);
+
     try {
-      const q = buildQuery();
-      const res = await searchUsers(q, newPage);
-      if (newPage === 1) {
-        setUsers(res.data.items);
-      } else {
-        setUsers(prev => [...prev, ...res.data.items]);
-      }
-      setPage(newPage);
+      const data = await fetchUserData(name);
+      setUsers([data]);
     } catch (err) {
-      setError('No users found matching your criteria');
-      setUsers([]);
+      setError(err.message || "Unknown error");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    handleSearch(1);
-  };
-
   return (
-    <div className="max-w-4xl mx-auto">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-xl mb-10">
-        <div className="grid md:grid-cols-3 gap-6 mb-6">
-          <input
-            type="text"
-            placeholder="Username or keyword"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="px-6 py-4 border-2 rounded-xl focus:border-blue-500 outline-none text-lg"
-          />
-          <input
-            type="text"
-            placeholder="Location (e.g. Lagos)"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="px-6 py-4 border-2 rounded-xl focus:border-blue-500 outline-none text-lg"
-          />
-          <input
-            type="number"
-            placeholder="Min repositories"
-            value={minRepos}
-            onChange={(e) => setMinRepos(e.target.value)}
-            className="px-6 py-4 border-2 rounded-xl focus:border-blue-500 outline-none text-lg"
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-5 rounded-xl font-bold text-xl hover:from-blue-700 hover:to-indigo-800 transition"
-        >
-          Search Users
-        </button>
+    <div style={{ padding: 16 }}>
+      <form onSubmit={onSubmit}>
+        <input
+          name="username"
+          type="text"
+          placeholder="GitHub username"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          style={{ padding: 8, marginRight: 8 }}
+        />
+        <button type="submit">Search</button>
       </form>
 
-      {loading && page === 1 && <p className="text-center text-2xl">Loading...</p>}
-      {error && <p className="text-center text-red-600 text-xl">{error}</p>}
+      {loading && <p>Loading...</p>}
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {users.map(user => (
-          <div key={user.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition">
-            <img src={user.avatar_url} alt={user.login} className="w-full h-64 object-cover" />
-            <div className="p-6">
-              <h3 className="text-2xl font-bold text-gray-800">{user.login}</h3>
-              <a
-                href={user.html_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium"
-              >
-                View GitHub Profile →
-              </a>
+      {!loading && error && <p style={{ color: "red" }}>{error}</p>}
+
+      {!loading && !error && users.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          {users.map((user) => (
+            <div key={user.id ?? user.login} style={{ marginBottom: 16 }}>
+              <img
+                src={user.avatar_url}
+                alt={`${user.login} avatar`}
+                style={{ width: 96, borderRadius: 8 }}
+              />
+              <h3>{user.login}</h3>
+              <p>{user.name}</p>
+              <p>{user.bio}</p>
+              {user.location && <p>Location: {user.location}</p>}
+              {user.html_url && (
+                <p>
+                  <a href={user.html_url} target="_blank" rel="noreferrer">
+                    View on GitHub
+                  </a>
+                </p>
+              )}
             </div>
-          </div>
-        ))}
-      </div>
-
-      {users.length > 0 && (
-        <div className="text-center mt-12">
-          <button
-            onClick={() => handleSearch(page + 1)}
-            disabled={loading}
-            className="px-12 py-5 bg-indigo-600 text-white text-xl rounded-xl hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {loading ? 'Loading more...' : 'Load More Users'}
-          </button>
+          ))}
         </div>
+      )}
+
+      {!loading && !error && users.length === 0 && query.trim() !== "" && (
+        <p>Looks like we cant find the user</p>
       )}
     </div>
   );
-}
+};
 
 export default Search;
